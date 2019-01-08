@@ -89,6 +89,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.chalice/deployments/
 
 # Spyder project settings
 .spyderproject

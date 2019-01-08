@@ -1,0 +1,4 @@
+chalice
+sqlalchemy
+alembic
+psycopg2
