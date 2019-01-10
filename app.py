@@ -34,7 +34,8 @@ init_log(log)
     content_types=[
         'text/plain',
         'application/json'
-    ]
+    ],
+    cors=True
 )
 def login():
     return _forward_json_to(users.login_user)
@@ -46,7 +47,8 @@ def login():
     content_types=[
         'text/plain',
         'application/json'
-    ]
+    ],
+    cors=True
 )
 def register():
     return _forward_json_to(users.register_user)
@@ -58,7 +60,8 @@ def register():
     content_types=[
         'text/plain',
         'application/json'
-    ]
+    ],
+    cors=True
 )
 def create_room():
     return _forward_json_and_headers_to(room.create_room)
@@ -70,7 +73,8 @@ def create_room():
     content_types=[
         'text/plain',
         'application/json'
-    ]
+    ],
+    cors=True
 )
 def send_message():
     return _forward_json_and_headers_to(room.send_message)
@@ -78,7 +82,8 @@ def send_message():
 
 @app.route(
     '/get-room-history',
-    methods=['GET']
+    methods=['GET'],
+    cors=True
 )
 def get_room_history():
     return _forward_query_params_and_headers_to(room.room_history)
