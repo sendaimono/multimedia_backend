@@ -3,7 +3,7 @@ from chalicelib.database.db import Session, User
 import logging as log
 
 def validate(headers: HEADERS) -> User:
-    uuid = headers.get('user')
+    uuid = headers.get('authorization')
     if not uuid:
         return None
     session = Session()
