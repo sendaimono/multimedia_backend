@@ -7,6 +7,8 @@ import chalicelib.json_proto as proto
 import chalicelib.users as users
 import chalicelib.room as room
 import chalicelib.common
+from chalicelib.socket.server import Server
+import chalicelib.signal as signal
 
 app = Chalice(app_name='chat')
 app.debug = True
@@ -26,7 +28,9 @@ def init_log(log):
 
 
 init_log(log)
-
+signal.init()
+server = Server()
+server.start()
 
 @app.route(
     '/login',
