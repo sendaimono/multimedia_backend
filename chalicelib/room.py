@@ -67,10 +67,11 @@ def send_message(request: REQUEST, headers: HEADERS):
     try:
         session.add(message)
         session.commit()
-        signal.emmit(
-            ChatEvent(user.uuid,
-                      room_gid,
-                      EventType.NEW_MSG))
+        emmitNewMsg(
+            session,
+            user.uuid,
+            room_gid,
+            message.id)
         return proto.ok()
     except Exception as e:
         log.error(e)
@@ -149,18 +150,46 @@ def generate_room_gid(length: int = 8) -> str:
         session.close()
 
 
-def _msg_to_json(messages: List[Tuple]) -> List[DICT]:
+def _msgs_to_json(messages: List[Tuple]) -> List[DICT]:
     converted = []
     if not messages:
         return converted
     for msg in messages:
-        current = {}
-        current['sender'] = {}
-        current['sender']['uuid'] = msg[0]
-        current['sender']['username'] = msg[1]
-        current['msg'] = {}
-        current['msg']['msgId'] = msg[2]
-        current['msg']['txt'] = msg[3]
-        current['msg']['timestamp'] = msg[4].timestamp()
-        converted.append(current)
+        converted.append(_msg_to_json(msg))
     return converted
+
+
+def _msg_to_json(msg: Tuple) -> DICT:
+    if not msg:
+        return None
+    current = {}
+    current['sender'] = {}
+    current['sender']['uuid'] = msg[0]
+    current['sender']['username'] = msg[1]
+    current['msg'] = {}
+    current['msg']['msgId'] = msg[2]
+    current['msg']['txt'] = msg[3]
+    current['msg']['timestamp'] = msg[4].timestamp()
+    return current
+
+
+def emmitNewMsg(session,
+                user_uuid: str,
+                room_gid: str,
+                message_id: int):
+    try:
+        message = session.query(
+            User.uuid,
+            User.username,
+            Message.id,
+            Message.msg,
+            Message.created).join(
+                Message, User.messages).filter(
+                    Message.id == message_id).one_or_none()
+        signal.emmit(
+            ChatEvent(user_uuid,
+                      room_gid,
+                      EventType.NEW_MSG,
+                      _msg_to_json(message)))
+    except Exception as e:
+        log.error(e)

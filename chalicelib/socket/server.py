@@ -26,17 +26,19 @@ class Server(Thread):
             log.debug("Listening...")
             self.socket.listen()
             (s, c) = self.socket.accept()
-            log.debug("Accepted new connection!")
+            s.setblocking(False)
+            # log.debug("Accepted new connection!")
             cli = Client(s, c)
             if self.verify_conn(cli):
                 cli.start()
                 signal.Signal.add_client(cli)
-                signal.emmit(
-                    ChatEvent(
-                        cli.user.uuid,
-                        cli.room.room_gid,
-                        EventType.JOIN))
+                # signal.emmit(
+                #     ChatEvent(
+                #         cli.user.uuid,
+                #         cli.room.room_gid,
+                #         EventType.JOIN))
             else:
+                cli.socket.close()
                 log.debug("Invalid connection")
 
     def verify_conn(self, client: Client) -> bool:
@@ -47,6 +49,9 @@ class Server(Thread):
         except Exception as e:
             log.error(e)
             return False
+        # if signal.Signal.already_connected(
+        #     data.get('uuid'), data.get('room_gid')):
+        #     return False
         client.user = validate(data.get('uuid'))
         client.room = get_room_by_room_gid(data.get('room_gid'))
         if not client.user or not client.room:

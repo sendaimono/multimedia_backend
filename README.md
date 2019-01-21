@@ -114,6 +114,32 @@ List of features **ChatBackend** provides(in braces are endpoints):
 }
 ```
 
+## Socket connection
+
+Connect to socket at 127.0.0.1:2004. After connection send binary encoded msg(I think that SocketIO handles this part):
+```json
+{
+    'uuid': "99f0e998-1360-11e9-ab6c-00e04c681690",
+    'room_gid': 'wjLJb3Jo'
+}
+```
+if connection succeds socket will remain connect, if verification fails socket will be insftantly closed. Later you will receive events(binary encoded, which you have to decode):
+```json
+{  
+    "sender":{  
+        "uuid":"12731d50-1594-11e9-93de-de0058a9cc01",
+        "username":"Mikolaj"
+    },
+    "msg":{  
+        "msgId":36,
+        "txt":"asdfasdfjkll asdf asdf asdf2!",
+        "timestamp":1548067274.468027
+    }
+}
+```
+
+
+
 ## Start from scratch
 
 You need python 3.6 and pip3.6 installed

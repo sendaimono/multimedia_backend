@@ -23,6 +23,20 @@ class Signal:
         Signal.events_lock.release()
 
     @staticmethod
+    def remove_client(connection_uuid: str):
+        for idx, c in enumerate(Signal.clients):
+            if c.connection_uuid == connection_uuid:
+                Signal.clients.pop(idx)
+                log.debug(f'Client id: {connection_uuid} disconnected')
+
+    @staticmethod
+    def already_connected(user_uuid: str, room_gid: str) -> bool:
+        for c in Signal.clients:
+            if c.user.uuid == user_uuid and c.room.room_gid == room_gid:
+                return True
+        return False
+
+    @staticmethod
     def get_event() -> ChatEvent:
         Signal.events_lock.acquire()
         try:

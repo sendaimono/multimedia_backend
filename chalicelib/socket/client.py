@@ -5,7 +5,7 @@ from typing import Tuple, List
 from chalicelib.database.db import User, Room
 import json
 from uuid import uuid1
-from chalicelib.chat_event import ChatEvent
+from chalicelib.chat_event import ChatEvent, EventType
 
 CONNNECTION = Tuple[str, int]
 
@@ -19,6 +19,7 @@ class Client(Thread):
     _event: Event
     chat_events: List[ChatEvent]
     _lock: Lock
+    isDead = False
 
     def __init__(self, s: socket.socket, c: CONNNECTION):
         Thread.__init__(self)
@@ -34,7 +35,7 @@ class Client(Thread):
         self._lock.acquire()
         self.chat_events.append(event)
         self._lock.release()
-        log.debug("Added event")
+        # log.debug("Added event")
         self._event.set()
 
     def get_event(self) -> ChatEvent:
@@ -67,29 +68,45 @@ class Client(Thread):
     def send(self, msg: str) -> bool:
         try:
             data = msg.encode()
-            self.socket.sendall(data)
-            return True
+            sent = self.socket.sendall(data)
+            log.debug(sent)
+            return sent is None
         except Exception as e:
+            log.error(e)
             log.error(f'User {self.user.uuid}: {e}')
         return False
 
     def run(self):
         log.debug(f'User {self.user.login}:{self.user.uuid} connected to room '
-                  f'{self.room.room_gid}!')
+                  f'{self.room.room_gid}! Connection id: {self.connection_uuid}')
         while True:
-            log.debug("Going sleep (client)!")
+            # log.debug("Going sleep (client)!")
             self._event.wait()
-            log.debug("Received event!")
+            # log.debug("Received event!")
             while len(self.chat_events):
                 event: ChatEvent = self.get_event()
                 if event:
                     self.process_event(event)
+                if self.isDead:
+                    return
             self._event.clear()
 
     def process_event(self, event: ChatEvent):
-        if (self.room.room_gid == event.room_gid and
-                self.user.uuid != event.user_uuid):
-            log.debug(f"Sending msg to {self.user.uuid}...")
+        if (self.room.room_gid == event.room_gid):
             res = self.send(json.dumps(event.to_json()))
             log.debug(f"Sending msg to {self.user.uuid}: {res}")
+            if not res:
+                self.onDisconnect()
 
+    def onDisconnect(self):
+        from chalicelib.signal import Signal
+        Signal.remove_client(self.connection_uuid)
+        # Signal.add_event(
+        #     ChatEvent(
+        #         self.user.uuid,
+        #         self.room.room_gid,
+        #         EventType.LEAVE,
+        #         data={
+        #             'username': self.user.username
+        #         }))
+        self.isDead = True
