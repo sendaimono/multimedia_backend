@@ -1,6 +1,6 @@
 from chalicelib.types import REQUEST, HEADERS, DICT
 from typing import List, Tuple
-from chalicelib.validator import validate
+from chalicelib.validator import validate_http
 import chalicelib.json_proto as proto
 from chalicelib.database.db import Room, Session, Message, User
 from datetime import datetime
@@ -8,12 +8,14 @@ import re
 import string
 import secrets
 import logging as log
+import chalicelib.signal as signal
+from chalicelib.chat_event import ChatEvent, EventType
 
 CONFUSING_CHARS = r'[lI10O]'
 
 
 def create_room(request: REQUEST, headers: HEADERS):
-    user = validate(headers)
+    user = validate_http(headers)
     if not user:
         return proto.error(400, 'Unknown user')
     room = Room()
@@ -40,7 +42,7 @@ def create_room(request: REQUEST, headers: HEADERS):
 
 
 def send_message(request: REQUEST, headers: HEADERS):
-    user = validate(headers)
+    user = validate_http(headers)
     if not user:
         return proto.error(400, 'Unknown user')
     for p in ['room_gid', 'msg']:
@@ -65,15 +67,21 @@ def send_message(request: REQUEST, headers: HEADERS):
     try:
         session.add(message)
         session.commit()
+        emmitNewMsg(
+            session,
+            user.uuid,
+            room_gid,
+            message.id)
         return proto.ok()
     except Exception as e:
         log.error(e)
-        return proto.internal_error('Error while creating room')
+        return proto.internal_error('Error while adding msg')
     finally:
         session.close()
 
+
 def room_history(query_params: REQUEST, headers: HEADERS):
-    user = validate(headers)
+    user = validate_http(headers)
     if not user:
         return proto.error(400, 'Unknown user')
     for p in ['room_gid']:
@@ -90,6 +98,7 @@ def room_history(query_params: REQUEST, headers: HEADERS):
     log.debug(msg)
     return proto.ok(msg)
 
+
 def get_room_by_room_gid(room_gid: str) -> Room:
     session = Session()
     try:
@@ -102,11 +111,12 @@ def get_room_by_room_gid(room_gid: str) -> Room:
     finally:
         session.close()
 
+
 def load_room_history(room_id: int) -> List[DICT]:
     session = Session()
     try:
         messages = session.query(
-            User.uuid, 
+            User.uuid,
             User.username,
             Message.id,
             Message.msg,
@@ -139,18 +149,47 @@ def generate_room_gid(length: int = 8) -> str:
     finally:
         session.close()
 
-def _msg_to_json(messages: List[Tuple]) -> List[DICT]:
+
+def _msgs_to_json(messages: List[Tuple]) -> List[DICT]:
     converted = []
     if not messages:
         return converted
     for msg in messages:
-        current = {}
-        current['sender'] = {}
-        current['sender']['uuid'] = msg[0]
-        current['sender']['username'] = msg[1]
-        current['msg'] = {}
-        current['msg']['msgId'] = msg[2]
-        current['msg']['txt'] = msg[3]
-        current['msg']['timestamp'] = msg[4].timestamp()
-        converted.append(current)
+        converted.append(_msg_to_json(msg))
     return converted
+
+
+def _msg_to_json(msg: Tuple) -> DICT:
+    if not msg:
+        return None
+    current = {}
+    current['sender'] = {}
+    current['sender']['uuid'] = msg[0]
+    current['sender']['username'] = msg[1]
+    current['msg'] = {}
+    current['msg']['msgId'] = msg[2]
+    current['msg']['txt'] = msg[3]
+    current['msg']['timestamp'] = msg[4].timestamp()
+    return current
+
+
+def emmitNewMsg(session,
+                user_uuid: str,
+                room_gid: str,
+                message_id: int):
+    try:
+        message = session.query(
+            User.uuid,
+            User.username,
+            Message.id,
+            Message.msg,
+            Message.created).join(
+                Message, User.messages).filter(
+                    Message.id == message_id).one_or_none()
+        signal.emmit(
+            ChatEvent(user_uuid,
+                      room_gid,
+                      EventType.NEW_MSG,
+                      _msg_to_json(message)))
+    except Exception as e:
+        log.error(e)
