@@ -123,7 +123,7 @@ def load_room_history(room_id: int) -> List[DICT]:
             Message.created).join(
                 Message, User.messages).filter(Message.room == room_id).all()
         log.debug(messages)
-        return _msg_to_json(messages)
+        return _msgs_to_json(messages)
     except Exception as e:
         log.error(e)
         return None
