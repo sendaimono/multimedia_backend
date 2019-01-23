@@ -2,7 +2,6 @@ import logging as log
 import os
 import json
 
-from chalice import Chalice
 import chalicelib.json_proto as proto
 import chalicelib.users as users
 import chalicelib.room as room
