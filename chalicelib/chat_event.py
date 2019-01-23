@@ -2,35 +2,22 @@ import enum
 
 
 class EventType(enum.Enum):
-    JOIN = 1
-    LEAVE = 2
-    NEW_MSG = 3
+    JOIN_ROOM = 1
+    LEAVE_ROOM = 2
+    MESSAGE = 3
 
 
 class ChatEvent:
-    user_uuid: str
     room_gid: str
-    e_type: EventType
+    _e_type: EventType
     data = None
 
-    def __init__(self, user_uuid: str, room_gid: str, e_type: EventType, data = None):
-        self.user_uuid = user_uuid
+    @property
+    def event_type(self) -> str:
+        return self._e_type.name.lower()
+
+    def __init__(self, room_gid: str, e_type: EventType, data = None):
         self.room_gid = room_gid
-        self.e_type = e_type
+        self._e_type = e_type
         self.data = data
 
-    def to_json(self):
-        if self.data:
-            # return {
-            #     'user_uuid' : self.user_uuid,
-            #     'room_gid': self.room_gid,
-            #     'e_type': self.e_type.name,
-            #     'data': self.data
-            # }
-            return self.data
-        else:
-            return {
-                'user_uuid' : self.user_uuid,
-                'room_gid': self.room_gid,
-                'e_type': self.e_type.name,
-            }
