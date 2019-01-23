@@ -169,5 +169,5 @@ Go to folder repo folder and run
 
 In folder where `app.py` is located run:
 ```sh
-(venv)$ chalice local
+(venv)$ python app.py
 ```

@@ -69,7 +69,6 @@ def send_message(request: REQUEST, headers: HEADERS):
         session.commit()
         emmitNewMsg(
             session,
-            user.uuid,
             room_gid,
             message.id)
         return proto.ok()
@@ -174,7 +173,6 @@ def _msg_to_json(msg: Tuple) -> DICT:
 
 
 def emmitNewMsg(session,
-                user_uuid: str,
                 room_gid: str,
                 message_id: int):
     try:
@@ -187,9 +185,8 @@ def emmitNewMsg(session,
                 Message, User.messages).filter(
                     Message.id == message_id).one_or_none()
         signal.emmit(
-            ChatEvent(user_uuid,
-                      room_gid,
-                      EventType.NEW_MSG,
+            ChatEvent(room_gid,
+                      EventType.MESSAGE,
                       _msg_to_json(message)))
     except Exception as e:
         log.error(e)
