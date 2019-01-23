@@ -1,6 +1,6 @@
 # ChatBackend
 
-This is python **Chalice** project
+This is python **Flask** project, containing **SocketIO** for messaging purposes.
 
 ## Current features
 
@@ -119,11 +119,12 @@ List of features **ChatBackend** provides(in braces are endpoints):
 Connect to socket at 127.0.0.1:2004. After connection send binary encoded msg(I think that SocketIO handles this part):
 ```json
 {
-    'uuid': "99f0e998-1360-11e9-ab6c-00e04c681690",
-    'room_gid': 'wjLJb3Jo'
+    "uuid": "99f0e998-1360-11e9-ab6c-00e04c681690",
+    "room_gid": "wjLJb3Jo"
 }
 ```
 if connection succeds socket will remain connect, if verification fails socket will be insftantly closed. Later you will receive events(binary encoded, which you have to decode):
+### 'message' event
 ```json
 {  
     "sender":{  
@@ -135,6 +136,20 @@ if connection succeds socket will remain connect, if verification fails socket w
         "txt":"asdfasdfjkll asdf asdf asdf2!",
         "timestamp":1548067274.468027
     }
+}
+```
+
+### 'join_room' event
+```json
+{  
+    "user": "user_name"
+}
+```
+
+### 'leave_room' event
+```json
+{  
+    "user": "user_name"
 }
 ```
 
