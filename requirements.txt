@@ -1,4 +1,5 @@
-chalice
 sqlalchemy
 alembic
 psycopg2
+flask
+flask_socketio
