@@ -14,7 +14,7 @@ from chalicelib.socket.client import Client
 
 app = Flask(__name__)
 CORS(app)
-io = SocketIO(app, ping_interval=1, ping_timeout=2)
+io = SocketIO(app, ping_interval=1, ping_timeout=50)
 
 
 def init_log(log):
