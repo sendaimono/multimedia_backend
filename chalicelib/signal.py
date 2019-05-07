@@ -26,7 +26,8 @@ class Signal:
                 ChatEvent(client.room.room_gid,
                           EventType.JOIN_ROOM,
                           {
-                              'user': client.user.username
+                              'user': client.user.username,
+                              'uuid': client.user.uuid
                           }))
             Signal.events_emmitter.set()
         finally:
@@ -53,7 +54,8 @@ class Signal:
                         ChatEvent(c.room.room_gid,
                                   EventType.LEAVE_ROOM,
                                   {
-                                      'user': c.user.username
+                                      'user': c.user.username,
+                                      'uuid': c.user.uuid
                                   }))
                     Signal.events_emmitter.set()
         finally:
@@ -72,6 +74,17 @@ class Signal:
                         c.room.room_gid == cli.room.room_gid):
                     return True
             return False
+        finally:
+            Signal.client_lock.release()
+
+    @staticmethod
+    def find_client(sid: str) -> Client:
+        try:
+            Signal.client_lock.acquire()
+            for c in Signal.clients:
+                if(c.sid == sid):
+                    return c
+            return None
         finally:
             Signal.client_lock.release()
 
@@ -105,6 +118,7 @@ class Signal:
         while True:
             Signal.events_emmitter.wait()
             log.info("Recevied event to emmit")
+            log.info(Signal.client_lock.locked())
             log.debug(Signal.io)
             if Signal.io is not None:
                 while len(Signal.events):

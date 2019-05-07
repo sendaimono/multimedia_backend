@@ -78,6 +78,15 @@ def send_message(request: REQUEST, headers: HEADERS):
     finally:
         session.close()
 
+def location_update(data: DICT, sid: str):
+    client = signal.Signal.find_client(sid)
+    data['username'] = client.user.username
+    data['uuid'] = client.user.uuid
+    signal.emmit(
+        ChatEvent(client.room.room_gid,
+                    EventType.LOCATION,
+                    data))
+
 
 def room_history(query_params: REQUEST, headers: HEADERS):
     user = validate_http(headers)

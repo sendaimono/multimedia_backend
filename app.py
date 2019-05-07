@@ -14,12 +14,12 @@ from chalicelib.socket.client import Client
 
 app = Flask(__name__)
 CORS(app)
-io = SocketIO(app, ping_interval=1, ping_timeout=50)
+io = SocketIO(app, ping_interval=1, ping_timeout=5)
 
 
 def init_log(log):
     log.getLogger('werkzeug').setLevel(log.ERROR)
-    log_level = os.getenv('DEFAULT_LOG_LEVEL') or 'DEBUG'
+    log_level = os.getenv('DEFAULT_LOG_LEVEL') or 'INFO'
     level = getattr(log, log_level) if hasattr(log, log_level) else log.WARNING
     print(f"log level: {log_level}")
     log.basicConfig(
@@ -53,7 +53,12 @@ def on_auth(msg):
         log.info('Connected!')
         signal.Signal.add_client(cli)
         log.debug(f'Clients after: {len(signal.Signal.clients)}')
-    # emit('test', {'kk': 'asdf'}, room=sids[-2])
+
+@io.on('location')
+def on_location_update(msg):
+    log.info('location update')
+    data = json.loads(msg)
+    room.location_update(data, request.sid)
 
 
 @app.route(

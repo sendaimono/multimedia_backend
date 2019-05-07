@@ -5,6 +5,7 @@ class EventType(enum.Enum):
     JOIN_ROOM = 1
     LEAVE_ROOM = 2
     MESSAGE = 3
+    LOCATION = 4
 
 
 class ChatEvent:
